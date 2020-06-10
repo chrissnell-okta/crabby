@@ -136,7 +136,7 @@ The following format variables are available to use in the `log.format.event` fo
 
 | Format Variable | Description |
 | --------------- | ----------- |
-| `%even`         | The name of the event that was triggered. |
+| `%event`         | The name of the event that was triggered. |
 | `%status`       | The server status recorded by the event. |
 | `%time`         | The time this event was triggered. |
 | `%tags`         | A string that represents the tags of the event, formatted by the `log.format.tags` format string |
