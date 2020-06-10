@@ -19,8 +19,10 @@ type LogConfig struct {
 }
 
 type FormatConfig struct {
-	Metric string `yaml:"metric"`
-	Event  string `yaml:"event"`
+	Metric       string `yaml:"metric"`
+	Event        string `yaml:"event"`
+	Tag          string `yaml:"tag"`
+	TagSeparator string `yaml:"tag-seperator"`
 }
 
 type TimeConfig struct {
@@ -71,13 +73,32 @@ func (l LogStorage) processMetricsAndEvents(ctx context.Context, wg *sync.WaitGr
 	}
 }
 
+func (l LogStorage) BuildTagFormatString(tags map[string]string) string {
+
+	if len(tags) == 0 {
+		return ""
+	}
+
+	var sb strings.Builder
+	for name, value := range tags {
+		replacer := strings.NewReplacer(
+			"%name", name,
+			"%value", value,
+		)
+		sb.WriteString(replacer.Replace(l.Format.Tag))
+		sb.WriteString(l.Format.TagSeparator)
+	}
+	return strings.TrimSuffix(sb.String(), l.Format.TagSeparator)
+}
+
 func (l LogStorage) BuildMetricFormatString(m Metric) string {
 	replacer := strings.NewReplacer(
 		"%job", m.Job,
 		"%timing", m.Timing,
 		"%value", fmt.Sprintf("%.6g", m.Value),
 		"%time", m.Timestamp.In(l.Location).Format(l.TimeFormat),
-		"%url", m.URL)
+		"%url", m.URL,
+		"%tags", l.BuildTagFormatString(m.Tags))
 	return replacer.Replace(l.Format.Metric)
 }
 
@@ -85,7 +106,8 @@ func (l LogStorage) BuildEventFormatString(e Event) string {
 	replacer := strings.NewReplacer(
 		"%name", e.Name,
 		"%status", fmt.Sprint(e.ServerStatus),
-		"%time", e.Timestamp.In(l.Location).Format(l.TimeFormat))
+		"%time", e.Timestamp.In(l.Location).Format(l.TimeFormat),
+		"%tags", l.BuildTagFormatString(e.Tags))
 	return replacer.Replace(l.Format.Event)
 }
 
