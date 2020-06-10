@@ -13,7 +13,7 @@ import (
 // LogConfig describes the YAML-provided configuration for a Console
 // storage backend
 type LogConfig struct {
-	Stream string       `yaml:"stream"`
+	File   string       `yaml:"file"`
 	Format FormatConfig `yaml:"format"`
 	Time   TimeConfig   `yaml:"time"`
 }
@@ -133,14 +133,14 @@ func NewLogStorage(c *Config) (LogStorage, error) {
 	var outStream *os.File
 	var l = LogStorage{}
 
-	switch c.Storage.Log.Stream {
+	switch c.Storage.Log.File {
 	case "stdout":
 		outStream = os.Stdout
 	case "stderr":
 		outStream = os.Stderr
 	default:
 		var err error
-		outStream, err = os.OpenFile(c.Storage.Log.Stream, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+		outStream, err = os.OpenFile(c.Storage.Log.File, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 		// Don't defer fileStream close until processor is cancelled.
 		if err != nil {
 			return l, err

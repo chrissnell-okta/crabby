@@ -101,7 +101,7 @@ func NewStorage(ctx context.Context, wg *sync.WaitGroup, c *Config) (*Storage, e
 		}
 	}
 
-	if c.Storage.Log.Stream != "" {
+	if c.Storage.Log.File != "" {
 		err = s.AddEngine(ctx, wg, "log", c)
 		if err != nil {
 			return &s, fmt.Errorf("could not start Log storage backend: %v", err)
