@@ -48,6 +48,7 @@ func (c LogStorage) processMetricsAndEvents(ctx context.Context, wg *sync.WaitGr
 			}
 		case <-ctx.Done():
 			log.Println("Cancellation request recieved.  Cancelling metrics processor.")
+			c.Stream.Close()
 			return
 		}
 	}
@@ -67,7 +68,7 @@ func (c LogStorage) sendEvent(e Event) error {
 	return nil
 }
 
-func NewLogStorage(c *Config) LogStorage {
+func NewLogStorage(c *Config) (LogStorage, error) {
 	var outStream *os.File
 	switch c.Storage.Log.Stream {
 	case "stdout":
@@ -77,7 +78,12 @@ func NewLogStorage(c *Config) LogStorage {
 	case "stdin":
 		outStream = os.Stdin
 	default:
-		outStream = os.Stdin
+		var err error
+		outStream, err = os.OpenFile(c.Storage.Log.Stream, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+		// Don't defer fileStream close until processor is cancelled.
+		if err != nil {
+			return LogStorage{Stream: outStream}, err
+		}
 	}
-	return LogStorage{Stream: outStream}
+	return LogStorage{Stream: outStream}, nil
 }

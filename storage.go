@@ -159,7 +159,10 @@ func (s *Storage) AddEngine(ctx context.Context, wg *sync.WaitGroup, engineName 
 		s.Engines = append(s.Engines, se)
 	case "log":
 		se := StorageEngine{}
-		se.I = NewLogStorage(c)
+		se.I, err = NewLogStorage(c)
+		if err != nil {
+			return err
+		}
 		se.AcceptsEvents = true
 		se.AcceptsMetrics = true
 		se.M, se.E = se.I.StartStorageEngine(ctx, wg)
