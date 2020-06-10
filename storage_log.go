@@ -134,7 +134,6 @@ func NewLogStorage(c *Config) (LogStorage, error) {
 	var l = LogStorage{}
 
 	switch c.Storage.Log.File {
-	case "":
 	case "stdout":
 		outStream = os.Stdout
 	case "stderr":
