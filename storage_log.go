@@ -38,7 +38,7 @@ type LogStorage struct {
 }
 
 // StartStorageEngine creates a goroutine loop to receive metrics and send
-// them off to Log
+// them off to the log file
 func (l LogStorage) StartStorageEngine(ctx context.Context, wg *sync.WaitGroup) (chan<- Metric, chan<- Event) {
 	metricChan := make(chan Metric, 10)
 	eventChan := make(chan Event, 10)
@@ -111,7 +111,7 @@ func (l LogStorage) BuildEventFormatString(e Event) string {
 	return replacer.Replace(l.Format.Event)
 }
 
-// sendMetric sends a metric value to the Console
+// sendMetric sends a metric value to the log file
 func (l LogStorage) sendMetric(m Metric) error {
 	_, err := l.Stream.WriteString(l.BuildMetricFormatString(m))
 	if err != nil {
@@ -120,7 +120,7 @@ func (l LogStorage) sendMetric(m Metric) error {
 	return nil
 }
 
-// sendEvent sends an event to the Console
+// sendEvent sends an event to the log file
 func (l LogStorage) sendEvent(e Event) error {
 	_, err := l.Stream.WriteString(l.BuildEventFormatString(e))
 	if err != nil {
