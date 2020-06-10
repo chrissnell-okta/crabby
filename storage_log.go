@@ -134,6 +134,7 @@ func NewLogStorage(c *Config) (LogStorage, error) {
 	var l = LogStorage{}
 
 	switch c.Storage.Log.File {
+	case "":
 	case "stdout":
 		outStream = os.Stdout
 	case "stderr":
@@ -147,15 +148,35 @@ func NewLogStorage(c *Config) (LogStorage, error) {
 		}
 	}
 
+	if c.Storage.Log.Time.Location == "" {
+		c.Storage.Log.Time.Location = "Local"
+	}
+
 	location, err := time.LoadLocation(c.Storage.Log.Time.Location)
 	if err != nil {
 		return l, err
 	}
 
-	l.Stream = outStream
 	l.TimeFormat = c.Storage.Log.Time.Format
 	l.Location = location
 	l.Format = c.Storage.Log.Format
 
+	if l.TimeFormat == "" {
+		l.TimeFormat = "2006/01/02 15:04:05"
+	}
+	if l.Format.Metric == "" {
+		l.Format.Metric = "%time %job %timing: %value (%tags)\n"
+	}
+	if l.Format.Event == "" {
+		l.Format.Event = "%time %job: %status (%tags)\n"
+	}
+	if l.Format.Tag == "" {
+		l.Format.Tag = "%name: %value"
+	}
+	if l.Format.TagSeparator == "" {
+		l.Format.TagSeparator = ", "
+	}
+
+	l.Stream = outStream
 	return l, nil
 }
