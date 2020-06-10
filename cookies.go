@@ -24,9 +24,11 @@ func HeaderString(cookies []Cookie) string {
 	for _, c := range cookies {
 		// We're just going to re-use net/http's implementation of a Cookie, since
 		// proper validation and serialization of cookie names is very hairy.
+
+		// In a Cookie header, we don't send any cookie metadata.
 		httpCookie := http.Cookie{
-			Name:   c.Name,
-			Domain: c.Domain,
+			Name:  c.Name,
+			Value: c.Value,
 		}
 		sb.WriteString(httpCookie.String())
 		sb.WriteString("; ")
