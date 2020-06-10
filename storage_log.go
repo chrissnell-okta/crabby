@@ -138,8 +138,6 @@ func NewLogStorage(c *Config) (LogStorage, error) {
 		outStream = os.Stdout
 	case "stderr":
 		outStream = os.Stderr
-	case "stdin":
-		outStream = os.Stdin
 	default:
 		var err error
 		outStream, err = os.OpenFile(c.Storage.Log.Stream, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
