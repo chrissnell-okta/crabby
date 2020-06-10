@@ -151,6 +151,13 @@ func (s *Storage) AddEngine(ctx context.Context, wg *sync.WaitGroup, engineName 
 		se.AcceptsMetrics = true
 		se.M, se.E = se.I.StartStorageEngine(ctx, wg)
 		s.Engines = append(s.Engines, se)
+	case "console":
+		se := StorageEngine{}
+		se.I = NewConsoleStorage(c)
+		se.AcceptsEvents = true
+		se.AcceptsMetrics = true
+		se.M, se.E = se.I.StartStorageEngine(ctx, wg)
+		s.Engines = append(s.Engines, se)
 	}
 
 	return nil
