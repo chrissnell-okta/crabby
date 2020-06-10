@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// LogConfig describes the YAML-provided configuration for a Console
+// LogConfig describes the YAML-provided configuration for a logging
 // storage backend
 type LogConfig struct {
 	File   string       `yaml:"file"`
