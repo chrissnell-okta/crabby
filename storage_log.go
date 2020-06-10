@@ -5,71 +5,112 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync"
+	"time"
 )
 
 // LogConfig describes the YAML-provided configuration for a Console
 // storage backend
 type LogConfig struct {
-	Stream string `yaml:"stream"`
+	Stream string       `yaml:"stream"`
+	Format FormatConfig `yaml:"format"`
+	Time   TimeConfig   `yaml:"time"`
+}
+
+type FormatConfig struct {
+	Metric string `yaml:"metric"`
+	Event  string `yaml:"event"`
+}
+
+type TimeConfig struct {
+	Location string `yaml:"location"`
+	Format   string `yaml:"format"`
 }
 
 type LogStorage struct {
-	Stream *os.File
+	Stream     *os.File
+	Format     FormatConfig
+	Location   *time.Location
+	TimeFormat string
 }
 
 // StartStorageEngine creates a goroutine loop to receive metrics and send
 // them off to Log
-func (c LogStorage) StartStorageEngine(ctx context.Context, wg *sync.WaitGroup) (chan<- Metric, chan<- Event) {
+func (l LogStorage) StartStorageEngine(ctx context.Context, wg *sync.WaitGroup) (chan<- Metric, chan<- Event) {
 	metricChan := make(chan Metric, 10)
 	eventChan := make(chan Event, 10)
 
 	// Start processing the metrics we receive
-	go c.processMetricsAndEvents(ctx, wg, metricChan, eventChan)
+	go l.processMetricsAndEvents(ctx, wg, metricChan, eventChan)
 
 	return metricChan, eventChan
 }
 
-func (c LogStorage) processMetricsAndEvents(ctx context.Context, wg *sync.WaitGroup, mchan <-chan Metric, echan <-chan Event) {
+func (l LogStorage) processMetricsAndEvents(ctx context.Context, wg *sync.WaitGroup, mchan <-chan Metric, echan <-chan Event) {
 	wg.Add(1)
 	defer wg.Done()
 
 	for {
 		select {
 		case m := <-mchan:
-			err := c.sendMetric(m)
+			err := l.sendMetric(m)
 			if err != nil {
 				log.Println(err)
 			}
 		case e := <-echan:
-			err := c.sendEvent(e)
+			err := l.sendEvent(e)
 			if err != nil {
 				log.Println(err)
 			}
 		case <-ctx.Done():
 			log.Println("Cancellation request recieved.  Cancelling metrics processor.")
-			c.Stream.Close()
+			l.Stream.Close()
 			return
 		}
 	}
 }
 
-// sendMetric sends a metric value to the Console
-func (c LogStorage) sendMetric(m Metric) error {
+func (l LogStorage) BuildMetricFormatString(m Metric) string {
+	replacer := strings.NewReplacer(
+		"%job", m.Job,
+		"%timing", m.Timing,
+		"%value", fmt.Sprintf("%.6g", m.Value),
+		"%time", m.Timestamp.In(l.Location).Format(l.TimeFormat),
+		"%url", m.URL)
+	return replacer.Replace(l.Format.Metric)
+}
 
-	fmt.Fprintf(c.Stream, "Job: %s, Timing: %s, Value: %.6g, Time: %s, URL: %s\n", m.Job, m.Timing, m.Value,
-		m.Timestamp.Local().Format("Jan _2 15:04:05"), m.URL)
+func (l LogStorage) BuildEventFormatString(e Event) string {
+	replacer := strings.NewReplacer(
+		"%name", e.Name,
+		"%status", fmt.Sprint(e.ServerStatus),
+		"%time", e.Timestamp.In(l.Location).Format(l.TimeFormat))
+	return replacer.Replace(l.Format.Event)
+}
+
+// sendMetric sends a metric value to the Console
+func (l LogStorage) sendMetric(m Metric) error {
+	_, err := l.Stream.WriteString(l.BuildMetricFormatString(m))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 // sendEvent sends an event to the Console
-func (c LogStorage) sendEvent(e Event) error {
-	fmt.Fprintf(c.Stream, "Job: %s, ServerStatus: %d, Time: %s\n", e.Name, e.ServerStatus, e.Timestamp)
+func (l LogStorage) sendEvent(e Event) error {
+	_, err := l.Stream.WriteString(l.BuildEventFormatString(e))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func NewLogStorage(c *Config) (LogStorage, error) {
 	var outStream *os.File
+	var l = LogStorage{}
+
 	switch c.Storage.Log.Stream {
 	case "stdout":
 		outStream = os.Stdout
@@ -82,8 +123,19 @@ func NewLogStorage(c *Config) (LogStorage, error) {
 		outStream, err = os.OpenFile(c.Storage.Log.Stream, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 		// Don't defer fileStream close until processor is cancelled.
 		if err != nil {
-			return LogStorage{Stream: outStream}, err
+			return l, err
 		}
 	}
-	return LogStorage{Stream: outStream}, nil
+
+	location, err := time.LoadLocation(c.Storage.Log.Time.Location)
+	if err != nil {
+		return l, err
+	}
+
+	l.Stream = outStream
+	l.TimeFormat = c.Storage.Log.Time.Format
+	l.Location = location
+	l.Format = c.Storage.Log.Format
+
+	return l, nil
 }
