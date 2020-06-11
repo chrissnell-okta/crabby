@@ -54,6 +54,10 @@ func RunSimpleTest(ctx context.Context, j Job, storage *Storage, client *http.Cl
 		return
 	}
 
+	for key, value := range j.Headers {
+		req.Header.Add(key, value)
+	}
+
 	var t0, t1, t2, t3, t4 time.Time
 
 	trace := &httptrace.ClientTrace{
