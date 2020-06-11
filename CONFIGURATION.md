@@ -170,10 +170,8 @@ jobs:
    url:  https://mysite.org/some/page/
    interval: 30
    headers:
-     Authorization: ["Bearer: myauthtoken"]
-     # This will add the header 'X-Custom-Header' twice to the request, once with value 'Header1'
-     # and again with value 'Header 2'
-     "X-Custom-Header": ["Header 1", "Header 2"]
+     Authorization: "Bearer: myauthtoken"
+     "X-Custom-Header": "Header 1"
    cookies:
     - name: auth
       domain: mysite.org

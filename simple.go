@@ -54,10 +54,8 @@ func RunSimpleTest(ctx context.Context, j Job, storage *Storage, client *http.Cl
 		return
 	}
 
-	for key, values := range j.Step.Header {
-		for _, value := range values {
-			req.Header.Add(key, value)
-		}
+	for key, value := range j.Step.Header {
+		req.Header.Add(key, value)
 	}
 
 	if len(j.Step.Cookies) > 0 {
