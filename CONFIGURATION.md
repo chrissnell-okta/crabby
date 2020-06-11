@@ -23,7 +23,7 @@ Fields:
 | `url`      | The URL to probe. |
 | `method`   | The HTTP method to use. |
 | `interval` | How often crabby will initiate tests. (seconds) |
-| `headers`  | The headers that will be sent as part of the HTTP request. |
+| `header`   | The headers that will be sent as part of the HTTP request. |
 | `cookies`  | Cookies that will be sent as part of the HTTP request or set before the page loads (in selenium tests). This will override the `Cookie` header if set in `headers`. |
 
 ### `cookies`
@@ -169,6 +169,11 @@ jobs:
    type: selenium
    url:  https://mysite.org/some/page/
    interval: 30
+   headers:
+     Authorization: ["Bearer: myauthtoken"]
+     # This will add the header 'X-Custom-Header' twice to the request, once with value 'Header1'
+     # and again with value 'Header 2'
+     "X-Custom-Header": ["Header 1", "Header 2"]
    cookies:
     - name: auth
       domain: mysite.org
