@@ -19,11 +19,22 @@ type Job struct {
 	Interval uint16            `yaml:"interval"`
 	Cookies  []Cookie          `yaml:"cookies,omitempty"`
 	Tags     map[string]string `yaml:"tags,omitempty"`
+	Header   map[string][]string `yaml:"header,omitempty"`
+	ContentType string         `yaml:"content-type,omitempty"`  // if header contains a different content type
+																// this overwrites it.
+	Body     string            `yaml:"body,omitempty"`
+	Steps    []Step             `yaml:"steps,omitempty"` // an api job may consist of multiple jobs (steps)
 }
 
-// JobConfig holds a list of jobs to be run
-type JobConfig struct {
-	Jobs []Job `yaml:"jobs"`
+type Step struct {
+	Name     string            `yaml:"name"`
+	URL      string            `yaml:"url"`
+	Method   string            `yaml:"method"`
+	Cookies  []Cookie          `yaml:"cookies,omitempty"`
+	Tags     map[string]string `yaml:"tags,omitempty"`
+	Header   map[string][]string `yaml:"header,omitempty"`
+	ContentType string         `yaml:"content-type,omitempty"`// this overwrites it.
+	Body     string            `yaml:"body,omitempty"`
 }
 
 // JobRunner holds channels and state related to running Jobs
@@ -126,7 +137,7 @@ func StartJobs(ctx context.Context, wg *sync.WaitGroup, c *Config, storage *Stor
 
 	for _, j := range jobs {
 
-		// Merge the global tags with the per-job tags.  Per-job tags take precidence.
+		// Merge the global tags with the per-job tags.  Per-job tags take precedence.
 		j.Tags = mergeTags(j.Tags, c.General.Tags)
 
 		// If we've been provided with an offset for staggering jobs, sleep for a random
