@@ -1,4 +1,4 @@
-![Crabby monitoring of www.okta.com performance](crabby-www.okta.com.png "Crabby monitoring of www.okta.com performance")
+![Crabby monitoring of www.okta.com performance](./images/crabby-www.okta.com.png "Crabby monitoring of www.okta.com performance")
 
 
 # crabby
